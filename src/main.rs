@@ -14,6 +14,9 @@ use tokio_io::codec::{Encoder, Decoder};
 // a protocol specification ..   codex, basic info, multiplexed?, streaming?
 // a service .. how to produce a response give a request .. async function
 
+pub struct LineCodec;
+
+
 fn main() {
     println!("Hello, world!");
 }
