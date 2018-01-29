@@ -4,6 +4,10 @@ extern crate tokio_io;
 extern crate tokio_proto;
 extern crate tokio_service;
 
+use std::io;
+use std::str;
+use bytes::BytesMut;
+use tokio_io::codec::{Encoder, Decoder};
 
 // a server in tokio_proto is made up of three distinct parts
 // a transport ...   implemented using the framed helper
