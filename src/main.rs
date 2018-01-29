@@ -11,6 +11,8 @@ use tokio_io::codec::{Encoder, Decoder, Framed};
 use tokio_io::{AsyncRead, AsyncWrite};
 use tokio_proto::pipeline::ServerProto;
 use tokio_service::Service;
+use tokio_proto::TcpServer;
+use futures::{future, Future};
 
 // a server in tokio_proto is made up of three distinct parts
 // a transport ...   implemented using the framed helper
@@ -70,8 +72,36 @@ impl<T: AsyncRead + AsyncWrite + 'static> ServerProto<T> for LineProto {
     }
 }
 
+pub struct Echo;
 
+impl Service for Echo {
+    // These types must match the corresponding protocol types:
+    type Request = String;
+    type Response = String;
+
+    // For non-streaming protocols, service errors are always io::Error
+    type Error = io::Error;
+
+    // The future for computing the response; box it for simplicity.
+    type Future = Box<Future<Item = Self::Response, Error =  Self::Error>>;
+
+    // Produce a future for computing a response from a request.
+    fn call(&self, req: Self::Request) -> Self::Future {
+        // In this case, the response is immediate.
+        Box::new(future::ok(req))
+    }
+}
 
 fn main() {
-    println!("Hello, world!");
+    println!("Hello, world!, this is an echo-proto server");
+
+    // Specify the localhost address
+    let addr = "0.0.0.0:12345".parse().unwrap();
+
+    // The builder requires a protocol and an address
+    let server = TcpServer::new(LineProto, addr);
+
+    // We provide a way to *instantiate* the service for each new
+    // connection; here, we just immediately return a new instance.
+    server.serve(|| Ok(Echo));
 }
