@@ -7,7 +7,10 @@ extern crate tokio_service;
 use std::io;
 use std::str;
 use bytes::BytesMut;
-use tokio_io::codec::{Encoder, Decoder};
+use tokio_io::codec::{Encoder, Decoder, Framed};
+use tokio_io::{AsyncRead, AsyncWrite};
+use tokio_proto::pipeline::ServerProto;
+use tokio_service::Service;
 
 // a server in tokio_proto is made up of three distinct parts
 // a transport ...   implemented using the framed helper
@@ -49,6 +52,25 @@ impl Encoder for LineCodec {
         Ok(())
     }
 }
+
+pub struct LineProto;
+
+impl<T: AsyncRead + AsyncWrite + 'static> ServerProto<T> for LineProto {
+    // For this protocol style, `Request` matches the `Item` type of the codec's `Decoder`
+    type Request = String;
+
+    // For this protocol style, `Response` matches the `Item` type of the codec's `Encoder`
+    type Response = String;
+
+    // A bit of boilerplate to hook in the codec:
+    type Transport = Framed<T, LineCodec>;
+    type BindTransport = Result<Self::Transport, io::Error>;
+    fn bind_transport(&self, io: T) -> Self::BindTransport {
+        Ok(io.framed(LineCodec))
+    }
+}
+
+
 
 fn main() {
     println!("Hello, world!");
